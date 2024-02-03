@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"sync"
 )
 
 var (
@@ -14,10 +15,14 @@ var (
 )
 
 type SocketManager struct {
+	clients ClientList
+	sync.RWMutex
 }
 
 func NewSocketManager() *SocketManager {
-	return &SocketManager{}
+	return &SocketManager{
+		clients: make(ClientList),
+	}
 }
 
 func (m *SocketManager) serveWS(w http.ResponseWriter, r *http.Request) {
@@ -30,5 +35,22 @@ func (m *SocketManager) serveWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn.Close()
+	client := NewClient(conn, m)
+	m.addClient(client)
+}
+
+func (m *SocketManager) addClient(client *Client) {
+	m.Lock()
+	defer m.Unlock()
+	m.clients[client] = true
+}
+
+func (m *SocketManager) removeClient(client *Client) {
+	m.Lock()
+	defer m.Unlock()
+
+	if _, ok := m.clients[client]; ok {
+		client.connection.Close()
+		delete(m.clients, client)
+	}
 }
