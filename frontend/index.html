@@ -65,8 +65,9 @@
         }
 
         if (window["WebSocket"]) {
-            console.log("supports websocket")
-            // connect ws
+
+            new WebSocket("ws://" + document.location.host + "/ws");
+
         } else {
             alert("Browser not supprot ws")
         }
@@ -88,7 +89,10 @@
             width: 50%;
             border: 3px solid green;
             padding: 10px;
+        }
 
+        textarea {
+            width: 100%;
         }
     </style>
 </body>
