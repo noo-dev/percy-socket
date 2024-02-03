@@ -37,6 +37,9 @@ func (m *SocketManager) serveWS(w http.ResponseWriter, r *http.Request) {
 
 	client := NewClient(conn, m)
 	m.addClient(client)
+
+	// Start client processes
+	go client.readMessages()
 }
 
 func (m *SocketManager) addClient(client *Client) {
