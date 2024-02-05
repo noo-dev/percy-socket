@@ -40,6 +40,7 @@ func (m *SocketManager) serveWS(w http.ResponseWriter, r *http.Request) {
 
 	// Start client processes
 	go client.readMessages()
+	go client.writeMessages()
 }
 
 func (m *SocketManager) addClient(client *Client) {

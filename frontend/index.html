@@ -68,6 +68,9 @@
 
             var conn = new WebSocket("ws://" + document.location.host + "/ws");
 
+            conn.onmessage = function (event) {
+                console.log(event.data)
+            }
         } else {
             alert("Browser not supprot ws")
         }
