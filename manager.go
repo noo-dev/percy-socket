@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var (
@@ -21,13 +24,16 @@ type SocketManager struct {
 	clients ClientList
 	sync.RWMutex
 
+	otps RetentionMap
+
 	handlers map[string]EventHandler
 }
 
-func NewSocketManager() *SocketManager {
+func NewSocketManager(ctx context.Context) *SocketManager {
 	m := &SocketManager{
 		clients:  make(ClientList),
 		handlers: make(map[string]EventHandler),
+		otps:     NewRetentionMap(ctx, 5*time.Second),
 	}
 
 	m.setupEventHandlers()
@@ -55,6 +61,18 @@ func (m *SocketManager) routeEvent(event Event, c *Client) error {
 }
 
 func (m *SocketManager) serveWS(w http.ResponseWriter, r *http.Request) {
+
+	otp := r.URL.Query().Get("otp")
+	if otp == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if !m.otps.VerifyOTP(otp) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	log.Println("new connection")
 
 	// upgrade regular http connection into websocket
@@ -86,6 +104,45 @@ func (m *SocketManager) removeClient(client *Client) {
 		client.connection.Close()
 		delete(m.clients, client)
 	}
+}
+
+func (m *SocketManager) loginHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("hit there")
+	type userLoginReqBody struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	var reqBody userLoginReqBody
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// mock authentication
+	if reqBody.Username == "percy" && reqBody.Password == "123" {
+		type response struct {
+			OTP string `json:"otp"`
+		}
+
+		otp := m.otps.NewOTP()
+
+		resp := response{
+			OTP: otp.Key,
+		}
+
+		data, err := json.Marshal(resp)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+		return
+	}
+
+	w.WriteHeader(http.StatusUnauthorized)
 }
 
 func checkOrigin(r *http.Request) bool {
