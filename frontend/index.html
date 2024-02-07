@@ -78,6 +78,12 @@
             }
         }
 
+        class ChangeChatRoomEvent {
+            constructor(name) {
+                this.name = name
+            }
+        }
+
         function routeEvent(event) {
             if (event.type === undefined) {
                 alert("no type field in the event")
@@ -107,12 +113,19 @@
             conn.send(JSON.stringify(event))
         }
 
-        function changeChatRoom() {
+        function changeChatRoom(e) {
+            e.preventDefault()
             var newChat = document.getElementById("chatroom")
             if (newChat && newChat.value != selectedChat) {
-                console.log("NEW CHATTT", newChat.value)
+                selectedChat = newChat.value;
+                header = document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat
+
+                let changeEvent = new ChangeChatRoomEvent(selectedChat)
+                console.log(changeEvent.name)
+                sendEvent("change_chatroom", changeEvent)
+                let textarea = document.getElementById("chatmessages")
+                textarea.innerHTML = `You changed room into ${selectedChat}`
             }
-            return false;
         }
 
         function sendMessage() {

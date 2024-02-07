@@ -13,8 +13,9 @@ type Event struct {
 type EventHandler func(event Event, c *Client) error
 
 const (
-	EventSendMessage = "send_message"
-	EventNewMessage  = "new_message"
+	EventSendMessage    = "send_message"
+	EventNewMessage     = "new_message"
+	EventChangeChatroom = "change_chatroom"
 )
 
 type SendMessageEvent struct {
@@ -25,4 +26,8 @@ type SendMessageEvent struct {
 type NewMessageEvent struct {
 	SendMessageEvent
 	SentTime time.Time `json:"sent_time"`
+}
+
+type ChangeRoomEvent struct {
+	Name string `json:"name"`
 }

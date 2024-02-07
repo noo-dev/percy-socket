@@ -42,6 +42,7 @@ func NewSocketManager(ctx context.Context) *SocketManager {
 
 func (m *SocketManager) setupEventHandlers() {
 	m.handlers[EventSendMessage] = SendMessage
+	m.handlers[EventChangeChatroom] = ChangeChatRoomHandler
 }
 
 func SendMessage(event Event, c *Client) error {
@@ -66,9 +67,26 @@ func SendMessage(event Event, c *Client) error {
 		Type:    EventNewMessage,
 	}
 
+	fmt.Println("SENDER ROOM", c.chatroom)
+
 	for client := range c.wsManager.clients {
-		client.egress <- outgoingEvent
+		fmt.Println("receiver ROOM", client.chatroom)
+		if client.chatroom == c.chatroom {
+			client.egress <- outgoingEvent
+		}
 	}
+
+	return nil
+}
+
+func ChangeChatRoomHandler(event Event, c *Client) error {
+	var changeRoomEvent ChangeRoomEvent
+
+	if err := json.Unmarshal(event.Payload, &changeRoomEvent); err != nil {
+		return fmt.Errorf("Bad payload in request: %w", err)
+	}
+	fmt.Println("CHATROOM NAME: ", changeRoomEvent.Name)
+	c.chatroom = changeRoomEvent.Name
 
 	return nil
 }
