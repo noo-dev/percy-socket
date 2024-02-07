@@ -45,7 +45,31 @@ func (m *SocketManager) setupEventHandlers() {
 }
 
 func SendMessage(event Event, c *Client) error {
-	fmt.Println(event)
+	var chatEvent SendMessageEvent
+
+	if err := json.Unmarshal(event.Payload, &chatEvent); err != nil {
+		return fmt.Errorf("bad payload in request: %w", err)
+	}
+
+	var broadMessage NewMessageEvent
+	broadMessage.SentTime = time.Now()
+	broadMessage.Message = chatEvent.Message
+	broadMessage.From = chatEvent.From
+
+	data, err := json.Marshal(broadMessage)
+	if err != nil {
+		return fmt.Errorf("failed to marshal broadcast message: %w", err)
+	}
+
+	outgoingEvent := Event{
+		Payload: data,
+		Type:    EventNewMessage,
+	}
+
+	for client := range c.wsManager.clients {
+		client.egress <- outgoingEvent
+	}
+
 	return nil
 }
 

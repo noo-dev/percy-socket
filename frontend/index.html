@@ -63,6 +63,21 @@
             }
         }
 
+        class SendMessageEvent {
+            constructor(message, from) {
+                this.message = message
+                this.from = from
+            }
+        }
+
+        class NewMessageEvent {
+            constructor(message, from, sentTime) {
+                this.message = message
+                this.from = from
+                this.sentTime = sentTime
+            }
+        }
+
         function routeEvent(event) {
             if (event.type === undefined) {
                 alert("no type field in the event")
@@ -70,11 +85,20 @@
 
             switch (event.type) {
                 case "new_message":
-                    console.log("new message")
+                    const messageEvent = Object.assign(new NewMessageEvent, event.payload)
+                    appendChatMessage(messageEvent)
                     break;
                 default:
                     alert("unsupported message type")
             }
+        }
+
+        function appendChatMessage(messageEvent) {
+            var date = new Date(messageEvent.sent_time)
+            const formattedMsg = `${date.toLocaleString()}: ${messageEvent.message}`;
+            let textarea = document.getElementById("chatmessages");
+            textarea.innerHTML += "\n" + formattedMsg
+            textarea.scrollTop = textarea.scrollHeight
         }
 
         function sendEvent(eventName, payload) {
@@ -96,7 +120,8 @@
             console.log("hits")
             var newMessage = document.getElementById("message");
             if (newMessage) {
-                sendEvent("send_message", newMessage.value)
+                let outgoingEvent = new SendMessageEvent(newMessage.value, "percy")
+                sendEvent("send_message", outgoingEvent)
             }
         }
 
