@@ -129,7 +129,7 @@
 
         function connectWebsocket(otp) {
             if (window["WebSocket"]) {
-                conn = new WebSocket("ws://" + document.location.host + "/ws?otp=" + otp);
+                conn = new WebSocket("wss://" + document.location.host + "/ws?otp=" + otp);
 
                 conn.onopen = function(event) {
                     document.getElementById("connection-header").textContent = "Connection to WebSocket: true";
